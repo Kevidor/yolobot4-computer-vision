@@ -1,0 +1,8 @@
+#Exclude model files
+src/image_detection/model/*
+!src/image_detection/model/.gitkeep
+
+#Exclude colcon created dirctories
+build/
+install/
+log/
