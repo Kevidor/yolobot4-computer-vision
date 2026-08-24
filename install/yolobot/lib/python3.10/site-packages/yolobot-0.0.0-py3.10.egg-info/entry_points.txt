@@ -1,0 +1,8 @@
+[console_scripts]
+obj_loc = yolobot.obj_loc:main
+person_follow = yolobot.person_follow:main
+target_gen = yolobot.target_gen:main
+yolo_basic = yolobot.yolo_basic:main
+yolo_detect = yolobot.yolo_detect:main
+yolo_viz = yolobot.yolo_viz:main
+

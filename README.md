@@ -20,12 +20,84 @@ The project integrates computer vision, robotics, and AI to detect, classify, an
 ## Project Structure
 
 ```
-├── src/                # Source code
-    ├── models/         # Trained / pretrained models
-    ├── resource/
-    └── tests/
-├── LICENSE             # License file
-└── README.md
+.
+├── build
+│   ├── COLCON_IGNORE
+│   └── yolobot
+│       ├── build
+│       │   └── lib
+│       ├── colcon_build.rc
+│       ├── colcon_command_prefix_setup_py.sh
+│       ├── colcon_command_prefix_setup_py.sh.env
+│       ├── install.log
+│       ├── prefix_override
+│       │   ├── __pycache__
+│       │   └── sitecustomize.py
+│       └── yolobot.egg-info
+│           ├── dependency_links.txt
+│           ├── entry_points.txt
+│           ├── PKG-INFO
+│           ├── requires.txt
+│           ├── SOURCES.txt
+│           ├── top_level.txt
+│           └── zip-safe
+├── install
+│   ├── COLCON_IGNORE
+│   ├── local_setup.bash
+│   ├── local_setup.ps1
+│   ├── local_setup.sh
+│   ├── _local_setup_util_ps1.py
+│   ├── _local_setup_util_sh.py
+│   ├── local_setup.zsh
+│   ├── setup.bash
+│   ├── setup.ps1
+│   ├── setup.sh
+│   ├── setup.zsh
+│   └── yolobot
+│       ├── lib
+│       │   ├── python3.10
+│       │   └── yolobot
+│       └── share
+│           ├── ament_index
+│           ├── colcon-core
+│           └── yolobot
+├── LICENSE
+├── log
+│   ├── build_2026-07-05_19-42-20
+│   │   ├── events.log
+│   │   ├── logger_all.log
+│   │   └── yolobot
+│   │       ├── command.log
+│   │       ├── stderr.log
+│   │       ├── stdout.log
+│   │       ├── stdout_stderr.log
+│   │       └── streams.log
+│   ├── COLCON_IGNORE
+│   ├── latest -> latest_build
+│   └── latest_build -> build_2026-07-05_19-42-20
+├── README.md
+└── src
+    └── yolobot
+        ├── models
+        │   └── yolov8s.pt
+        ├── package.xml
+        ├── resource
+        │   └── yolobot
+        ├── setup.cfg
+        ├── setup.py
+        ├── test
+        │   ├── test_copyright.py
+        │   ├── test_flake8.py
+        │   └── test_pep257.py
+        └── yolobot
+            ├── __init__.py
+            ├── obj_loc.py
+            ├── person_follow.py
+            ├── state_machine.py
+            ├── target_gen.py
+            ├── yolo_basic.py
+            ├── yolo_detect.py
+            └── yolo_viz.py
 ```
 
 ---
@@ -48,8 +120,8 @@ All other dependencies will be installed during the compilation process.
 
 1. Clone the repository:
 
-   ```
-   git clone <your-repo-url>
+   ```bash
+   git clone [https://github.com/Kevidor/yolobot4-computer-vision.git](https://github.com/Kevidor/yolobot4-computer-vision.git)
    ```
 2. Install dependencies:
 
@@ -58,9 +130,13 @@ All other dependencies will be installed during the compilation process.
    ```
 3. Build the workspace (if using ROS):
 
+   ```bash
+   colcon build --packages-select yolobot
    ```
-   <colcon build / catkin_make>
-   ```
+   or build everything:
+   ```bash
+   colcon build
+   ``
 
 ---
 

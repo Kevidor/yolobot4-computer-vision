@@ -2,7 +2,16 @@
 models/*
 !models/.gitkeep
 
-#Exclude colcon created dirctories
+# ROS 2 / Colcon
 build/
 install/
 log/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
