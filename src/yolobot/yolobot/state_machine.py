@@ -5,7 +5,7 @@ from enum import Enum, auto
 import rclpy
 from rclpy.node import Node
 
-from geometry_msgs.msg import PointStamped, Twist
+from geometry_msgs.msg import PointStamped, PoseStamped, Twist
 #from nav2_simple_commander.robot_navigator import BasicNavigator
 from turtlebot4_navigation.turtlebot4_navigator import TurtleBot4Directions, TurtleBot4Navigator
 
@@ -37,7 +37,7 @@ class PersonFollower(Node):
         # ----------------------------
         self.state = State.INIT
 
-        self.target_position = None
+        self.target_point = None
         self.last_detection_time = None
 
         # ----------------------------
@@ -45,6 +45,7 @@ class PersonFollower(Node):
         # ----------------------------
         #self.navigator = BasicNavigator()
         self.navigator = TurtleBot4Navigator()
+        self.has_goal = False
 
         # Wait for Nav2
         self.navigator.waitUntilNav2Active()
@@ -55,7 +56,7 @@ class PersonFollower(Node):
         # ----------------------------
         self.target_sub = self.create_subscription(
             PointStamped,
-            "/yolo/object_position",
+            "/yolobot/object_position",
             self.target_callback,
             10
         )
@@ -77,6 +78,12 @@ class PersonFollower(Node):
             self.update
         )
 
+        # --------------------------------------------------
+        # Startup information
+        # --------------------------------------------------
+
+        self.get_logger().info("YOLO Person Follower node started.")
+
     # =====================================================
     # Callbacks
     # =====================================================
@@ -86,7 +93,7 @@ class PersonFollower(Node):
         Receives the tracked person's position.
         """
 
-        self.target_position = msg
+        self.target_point = msg
         self.last_detection_time = self.get_clock().now()
 
     # =====================================================
@@ -160,10 +167,12 @@ class PersonFollower(Node):
 
         if self.distance_to_target() < self.close_distance:
             self.navigator.cancelTask()
+            self.has_goal = False
             self.change_state(State.CLOSE)
             return
 
-        self.send_follow_goal()
+        if not self.has_goal:
+            self.send_follow_goal()
 
     # =====================================================
     # State: CLOSE
@@ -186,13 +195,13 @@ class PersonFollower(Node):
 
     def lost(self):
 
-        self.navigator.cancelTask()
-
         if self.target_visible():
             self.change_state(State.FOLLOWING)
             return
 
         if self.target_timed_out():
+            self.navigator.cancelTask()
+            self.has_goal = False
             self.change_state(State.SEARCHING)
 
     # =====================================================
@@ -209,7 +218,7 @@ class PersonFollower(Node):
 
     def target_visible(self):
 
-        return self.target_position is not None
+        return self.target_point is not None
 
     def target_timed_out(self):
 
@@ -224,26 +233,33 @@ class PersonFollower(Node):
 
     def distance_to_target(self):
 
-        if self.target_position is None:
+        if self.target_point is None:
             return float("inf")
 
-        x = self.target_position.point.x
-        y = self.target_position.point.y
+        x = self.target_point.point.x
+        y = self.target_point.point.y
 
         return (x**2 + y**2) ** 0.5
 
     def send_follow_goal(self):
-        """
-        Compute a goal behind the person and send it to Nav2.
 
-        TODO:
-            - Transform point into map frame
-            - Offset by follow_distance
-            - Send navigator.goToPose(goal)
-        """
-        # Set goal poses
-        goal_pose = self.navigator.getPoseStamped([-13.0, 9.0], TurtleBot4Directions.EAST)
+        #if not self.target_visible():
+        #    return
+
+        goal_pose = PoseStamped()
+
+        goal_pose.header.frame_id = self.target_point.header.frame_id
+        goal_pose.header.stamp = self.get_clock().now().to_msg()
+
+        goal_pose.pose.position.x = self.target_point.point.x
+        goal_pose.pose.position.y = self.target_point.point.y
+        goal_pose.pose.position.z = 0.0
+
+        # No rotation for now
+        goal_pose.pose.orientation.w = 1.0
+
         self.navigator.startToPose(goal_pose)
+        self.has_goal = True
 
     def rotate(self, angle: float = 0.5):
 

@@ -55,14 +55,14 @@ class ObjectLocator(Node):
 
         self.pub = self.create_publisher(
             PointStamped,
-            "/yolo/object_position",
+            "/yolobot/object_position",
             10
         )
 
         if self.visual:
             self.debug_pub = self.create_publisher(
                 Image,
-                "/yolo/debug_image",
+                "/yolobot/debug_image",
                 10
             )
 

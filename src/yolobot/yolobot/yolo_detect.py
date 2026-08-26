@@ -68,7 +68,7 @@ class YoloDetector(Node):
 
         self.detect_pub = self.create_publisher(
             Detection2DArray,
-            "/yolo/detections",
+            "/yolobot/detections",
             10
         )
 
@@ -81,7 +81,7 @@ class YoloDetector(Node):
         if self.enable_viz:
             self.viz_pub = self.create_publisher(
                 Image,
-                "/yolo/visualization",
+                "/yolobot/visualization",
                 10
             )
 
