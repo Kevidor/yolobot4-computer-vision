@@ -121,7 +121,7 @@ All other dependencies will be installed during the compilation process.
 1. Clone the repository:
 
    ```bash
-   git clone [https://github.com/Kevidor/yolobot4-computer-vision.git](https://github.com/Kevidor/yolobot4-computer-vision.git)
+   git clone https://github.com/Kevidor/yolobot4-computer-vision.git
    ```
 2. Install dependencies:
 
