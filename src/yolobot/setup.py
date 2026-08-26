@@ -27,8 +27,6 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'yolo_basic = yolobot.yolo_basic:main',
-            'yolo_viz = yolobot.yolo_viz:main',
             'yolo_detect = yolobot.yolo_detect:main',
             'obj_loc = yolobot.obj_loc:main',
             'target_gen = yolobot.target_gen:main',
