@@ -56,7 +56,7 @@ class PersonFollower(Node):
         # ----------------------------
         self.target_sub = self.create_subscription(
             PointStamped,
-            "/yolobot/object_position",
+            "/yolobot/obj_loc_position",
             self.target_callback,
             10
         )
@@ -173,6 +173,9 @@ class PersonFollower(Node):
 
         if not self.has_goal:
             self.send_follow_goal()
+#        elif self.target_moved_significantly():
+#            self.navigator.cancelTask()
+#            self.send_follow_goal()
 
     # =====================================================
     # State: CLOSE
@@ -260,6 +263,18 @@ class PersonFollower(Node):
 
         self.navigator.startToPose(goal_pose)
         self.has_goal = True
+
+#    def target_moved_significantly(self):
+#
+#        if self.goal_target_position is None:
+#            return True
+#
+#        dx = (self.target_point.point.x - self.goal_target_position.point.x)
+#        dy = (self.target_point.point.y - self.goal_target_position.point.y)
+#
+#        distance = (dx**2 + dy**2) ** 0.5
+#
+#        return distance > self.goal_update_distance
 
     def rotate(self, angle: float = 0.5):
 

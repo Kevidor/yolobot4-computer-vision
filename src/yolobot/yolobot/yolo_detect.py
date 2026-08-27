@@ -81,7 +81,7 @@ class YoloDetector(Node):
         if self.enable_viz:
             self.viz_pub = self.create_publisher(
                 Image,
-                "/yolobot/visualization",
+                "/yolobot/debug_yolo_vizualization",
                 10
             )
 
@@ -222,13 +222,9 @@ class YoloDetector(Node):
 
 
 def main(args=None):
-
     rclpy.init(args=args)
-
     node = YoloDetector()
-
     rclpy.spin(node)
-
     node.destroy_node()
     rclpy.shutdown()
 

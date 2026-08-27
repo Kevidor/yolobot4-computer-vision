@@ -144,14 +144,11 @@ All other dependencies will be installed during the compilation process.
 
 Run the main application:
 
-```
-<command to launch your system>
-```
-
-Example:
-
-```
-<ros2 launch ...>
+Start the yolo detection (with opetional args):
+```bash
+ros2 run yolobot yolo_detect --ros-args \
+-p enable_viz:=true 
+-p enable_basic:=true
 ```
 
 ---
