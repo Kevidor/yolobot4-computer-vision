@@ -6,7 +6,6 @@ import rclpy
 from rclpy.node import Node
 
 from geometry_msgs.msg import PointStamped, PoseStamped, Twist
-#from nav2_simple_commander.robot_navigator import BasicNavigator
 from turtlebot4_navigation.turtlebot4_navigator import TurtleBot4Directions, TurtleBot4Navigator
 
 
@@ -29,23 +28,26 @@ class PersonFollower(Node):
         self.follow_distance = 1.2
         self.close_distance = 1.0
         self.resume_distance = 1.4
-        self.goal_update_period = 0.5
-        self.target_timeout = 2.0
+        self.last_detection_timeout = 1.0
+        self.lost_timeout = 5.0
 
         # ----------------------------
         # State
         # ----------------------------
         self.state = State.INIT
-
-        self.target_point = None
-        self.last_detection_time = None
+        self.init_dock_started = False
+        self.init_pose_set = False
+        self.init_undock_started = False
 
         # ----------------------------
         # Nav2
         # ----------------------------
-        #self.navigator = BasicNavigator()
         self.navigator = TurtleBot4Navigator()
         self.has_goal = False
+        # targets
+        self.target_point = None
+        self.last_detection_time = None
+        self.lost_start_time = None
 
         # Wait for Nav2
         self.navigator.waitUntilNav2Active()
@@ -66,7 +68,7 @@ class PersonFollower(Node):
         # ----------------------------
         self.cmd_vel_pub = self.create_publisher(
             Twist,
-            "/cmd_vel",
+            "/robot7/cmd_vel",
             10
         )
 
@@ -81,7 +83,6 @@ class PersonFollower(Node):
         # --------------------------------------------------
         # Startup information
         # --------------------------------------------------
-
         self.get_logger().info("YOLO Person Follower node started.")
 
     # =====================================================
@@ -93,6 +94,7 @@ class PersonFollower(Node):
         Receives the tracked person's position.
         """
 
+        self.stop_robot()
         self.target_point = msg
         self.last_detection_time = self.get_clock().now()
 
@@ -125,20 +127,70 @@ class PersonFollower(Node):
 
     def state_init(self):
 
-        # Start on dock
-        if not self.navigator.getDockedStatus():
-            self.navigator.info('Docking before intialising pose')
-            self.navigator.dock()
+        # -----------------------------------------
+        # Enter searching
+        # -----------------------------------------
+        if not self.navigator.getDockedStatus() \
+        and self.init_dock_started \
+        and self.init_pose_set \
+        and self.init_undock_started: # check if everything is done else jump over it and let it init
 
-        # Set initial pose
-        if not self.navigator.initial_pose_received:
-            initial_pose = self.navigator.getPoseStamped([0.0, 0.0], TurtleBot4Directions.NORTH)
-            self.navigator.clearAllCostmaps()
-            self.navigator.setInitialPose(initial_pose)
-            self.navigator.undock()
-
-        if not self.navigator.getDockedStatus() and self.navigator.initial_pose_received:
+            self.navigator.info("Initialization complete")
             self.change_state(State.SEARCHING)
+            return
+
+        # -----------------------------------------
+        # Step 1: Make sure robot is docked
+        # -----------------------------------------
+        if not self.navigator.getDockedStatus(): # if not docked, then dock first
+            self.navigator.info("Docking before initialization")
+
+            if not self.init_dock_started:
+                self.navigator.dock()
+                self.init_pose_set = False
+                self.init_dock_started = True
+            return
+        else:                                    # if docked continue
+            if not self.init_dock_started:
+                self.navigator.info("Already docked for initialization")
+                self.init_pose_set = False
+                self.init_dock_started = True
+
+        # -----------------------------------------
+        # Step 2: Set initial pose
+        # -----------------------------------------
+        if not self.navigator.initial_pose_received: # if no inital pose, then set pose
+            self.navigator.info("Setting initial pose")
+
+            if not self.init_pose_set:
+                initial_pose = self.navigator.getPoseStamped(
+                    [0.0, 0.0],
+                    TurtleBot4Directions.NORTH
+                )
+
+                self.navigator.clearAllCostmaps()
+                self.navigator.setInitialPose(initial_pose)
+
+                self.init_pose_set = True
+
+            return
+        else:                                        # if inital pose set continue
+            if not self.init_pose_set:
+                self.navigator.info("Initial pose already set")
+                self.init_pose_set = True
+
+        # -----------------------------------------
+        # Step 3: Undock
+        # -----------------------------------------
+        if self.navigator.getDockedStatus() and self.init_dock_started and self.init_pose_set: # if docked, then undock
+            #self.navigator.info("Undocking")
+
+            if not self.init_undock_started:
+                self.navigator.undock()
+                self.init_undock_started = True
+
+            return
+
 
     # =====================================================
     # State: SEARCHING
@@ -162,6 +214,7 @@ class PersonFollower(Node):
     def following(self):
 
         if not self.target_visible():
+            self.lost_start_time = self.get_clock().now()
             self.change_state(State.LOST)
             return
 
@@ -186,6 +239,7 @@ class PersonFollower(Node):
         self.stop_robot()
 
         if not self.target_visible():
+            self.lost_start_time = self.get_clock().now()
             self.change_state(State.LOST)
             return
 
@@ -221,18 +275,25 @@ class PersonFollower(Node):
 
     def target_visible(self):
 
-        return self.target_point is not None
-
-    def target_timed_out(self):
-
         if self.last_detection_time is None:
-            return True
+            return False
 
         elapsed = (
             self.get_clock().now() - self.last_detection_time
         ).nanoseconds / 1e9
 
-        return elapsed > self.target_timeout
+        return elapsed <= self.last_detection_timeout
+
+    def target_timed_out(self):
+
+        if self.lost_start_time is None:
+            return True
+
+        elapsed = (
+            self.get_clock().now() - self.lost_start_time
+        ).nanoseconds / 1e9
+
+        return elapsed > self.lost_timeout
 
     def distance_to_target(self):
 
@@ -276,7 +337,7 @@ class PersonFollower(Node):
 #
 #        return distance > self.goal_update_distance
 
-    def rotate(self, angle: float = 0.5):
+    def rotate(self, angle: float = 0.1):
 
         twist = Twist()
         twist.angular.z = angle

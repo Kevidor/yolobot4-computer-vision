@@ -1,5 +1,6 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 
 from vision_msgs.msg import Detection2DArray
 from geometry_msgs.msg import PointStamped
@@ -9,6 +10,12 @@ import cv2
 from cv_bridge import CvBridge
 import numpy as np
 
+# Definiere ein extrem schnelles, lag-freies Profil
+fast_qos = QoSProfile(
+    reliability=ReliabilityPolicy.BEST_EFFORT, # package are allowed to be discarded
+    history=HistoryPolicy.KEEP_LAST,
+    depth=1                                    # Keep newest image
+)
 
 class ObjectLocator(Node):
 
@@ -48,7 +55,7 @@ class ObjectLocator(Node):
             Detection2DArray,
             "/yolobot/detections",
             self.detection_cb,
-            1
+            fast_qos
         )
 
         self.create_subscription(
@@ -62,7 +69,7 @@ class ObjectLocator(Node):
             Image,
             "/robot7/oakd/stereo/image_raw",
             self.depth_cb,
-            1
+            fast_qos
         )
 
         # RGB is only needed for visualization
@@ -71,7 +78,7 @@ class ObjectLocator(Node):
                 Image,
                 "/robot7/oakd/rgb/preview/image_raw",
                 self.rgb_cb,
-                1
+                fast_qos
             )
 
         # =====================================================
@@ -106,7 +113,19 @@ class ObjectLocator(Node):
     # =========================================================
 
     def camera_info_cb(self, msg):
-        self.camera_info = msg
+        # Get camera intrinsics once
+        self.camera_info.fx = msg.k[0]
+        self.camera_info.fy = msg.k[4]
+        self.camera_info.cx = msg.k[2]
+        self.camera_info.cy = msg.k[5]
+        
+        self.camera_info.rgb_w = msg.width
+        self.camera_info.rgb_h = msg.height
+
+        self.get_logger().info("CameraInfo was retrieved successfully. Destroying subscriber...")
+
+        # Then destroy subsciption
+        self.destroy_subscription(self.info_sub)
 
     # =========================================================
     # Depth Image
@@ -139,12 +158,8 @@ class ObjectLocator(Node):
 
     def detection_cb(self, msg):
 
-        # We need camera information and a depth image
-        # before we can calculate a 3D position.
-        if (
-            self.camera_info is None
-            or self.depth_image is None
-        ):
+        # Wait until camer_info was retrieved once
+        if self.camera_info is None or self.depth_image is None:
             return
 
         # Visualization additionally requires an RGB image.
@@ -162,19 +177,11 @@ class ObjectLocator(Node):
         # Camera intrinsics
         # -----------------------------------------------------
 
-        fx = self.camera_info.k[0]
-        fy = self.camera_info.k[4]
-        cx = self.camera_info.k[2]
-        cy = self.camera_info.k[5]
-
-        rgb_w = self.camera_info.width
-        rgb_h = self.camera_info.height
-
         depth_h, depth_w = self.depth_image.shape[:2]
 
         # RGB → depth coordinate scaling
-        scale_x = depth_w / rgb_w
-        scale_y = depth_h / rgb_h
+        scale_x = depth_w / self.camera_info.rgb_w
+        scale_y = depth_h / self.camera_info.rgb_h
 
         # -----------------------------------------------------
         # Process detections
@@ -238,8 +245,8 @@ class ObjectLocator(Node):
             # Project pixel into 3D
             # =================================================
 
-            x = (u - cx) * z / fx
-            y = (v - cy) * z / fy
+            x = (u - self.camera_info.cx) * z / self.camera_info.fx
+            y = (v - self.camera_info.cy) * z / self.camera_info.fy
 
             # =================================================
             # Publish 3D point

@@ -116,7 +116,7 @@ class YoloDetector(Node):
 
         results = self.model(
             cv_image,
-            conf=0.5,
+            conf=0.8,
             classes=[0], # class 0 is 'person' in COCO dataset
             verbose=False
         )

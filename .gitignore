@@ -16,5 +16,7 @@ __pycache__/
 .vscode/
 .idea/
 
-# Archive
+# Unrelated
 archive/
+maps/*
+!maps/.gitkeep

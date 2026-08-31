@@ -116,27 +116,43 @@ source /opt/ros/humble/setup.bash
 All other dependencies will be installed during the compilation process.
 
 
-## Installation
+## Installation/Setup
 
 1. Clone the repository:
 
    ```bash
    git clone https://github.com/Kevidor/yolobot4-computer-vision.git
    ```
-2. Install dependencies:
-
-   ```
-   <add your setup steps here>
-   ```
-3. Build the workspace (if using ROS):
+2. Create .venv:
 
    ```bash
-   colcon build --packages-select yolobot
+   python -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
    ```
-   or build everything:
+3. Enter workspace and build the package:
+
    ```bash
-   colcon build
-   ``
+   cd img_det_ws/
+   colcon build --package-select yolobot
+   ```
+4. Exit workspace and source enviroments:
+   ```bash
+   cd ..
+   source .venv/bin/activate
+   ```
+
+Now everything should be set up and ready to go. The folder structure should look something like this:
+```
+.
+├── img_det_ws
+└── .venv
+```
+It is important to note that the virtual enviroment that is created during the setup phase includes all the moduls/libraries needed for the Yolo detection. So in case the modules aren't found while running the detection node, check the `$PYTHONPATH`. While `colcon` builds the package it might not include the `.venv` and it has to be added manually.
+```bash
+echo $PYTHONPATH # Check the python path
+export path/to/.venv/lib/python3.10/site-packages # include .venv path
+```
 
 ---
 
@@ -144,11 +160,27 @@ All other dependencies will be installed during the compilation process.
 
 Run the main application:
 
-Start the yolo detection (with opetional args):
+Start the `YoloDetector` node (with optional args):
 ```bash
 ros2 run yolobot yolo_detect --ros-args \
 -p enable_viz:=true 
 -p enable_basic:=true
+```
+*Note:  
+`enable_viz` enables a debug topic that sends image data with drawn bounding boxes.  
+`enable_basic` enables terminal output for debugging detections*
+
+Start the `ObjectLocator` node:
+```bash
+ros2 run yolobot obj_loc --ros-args \
+-p enable_viz:=true 
+```
+*Note:  
+`enable_viz` enables a debug topic that sends image data with drawn bounding boxes and coordinates*
+
+Start the `StateMaschine` node:
+```bash
+ros2 run yolobot state_machine
 ```
 
 ---

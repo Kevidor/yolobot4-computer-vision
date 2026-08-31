@@ -29,7 +29,7 @@ setup(
         'console_scripts': [
             'yolo_detect = yolobot.yolo_detect:main',
             'obj_loc = yolobot.obj_loc:main',
-            'state_machine = yolobot.state_machine:main',
+            'person_follow = yolobot.person_follow:main',
         ],
     },
 )
