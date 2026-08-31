@@ -57,7 +57,7 @@ class YoloDetector(Node):
 
         self.image_sub = self.create_subscription(
             Image,
-            "robot7/oakd/rgb/preview/image_raw",
+            "oakd/rgb/preview/image_raw",
             self.process_image,
             10
         )

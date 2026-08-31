@@ -60,14 +60,14 @@ class ObjectLocator(Node):
 
         self.create_subscription(
             CameraInfo,
-            "/robot7/oakd/rgb/preview/camera_info",
+            "oakd/rgb/preview/camera_info",
             self.camera_info_cb,
             1
         )
 
         self.create_subscription(
             Image,
-            "/robot7/oakd/stereo/image_raw",
+            "oakd/stereo/image_raw",
             self.depth_cb,
             fast_qos
         )
@@ -76,7 +76,7 @@ class ObjectLocator(Node):
         if self.enable_viz:
             self.create_subscription(
                 Image,
-                "/robot7/oakd/rgb/preview/image_raw",
+                "oakd/rgb/preview/image_raw",
                 self.rgb_cb,
                 fast_qos
             )

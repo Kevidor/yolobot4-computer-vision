@@ -68,7 +68,7 @@ class PersonFollower(Node):
         # ----------------------------
         self.cmd_vel_pub = self.create_publisher(
             Twist,
-            "/robot7/cmd_vel",
+            "cmd_vel",
             10
         )
 
